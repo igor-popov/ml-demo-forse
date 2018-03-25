@@ -1,0 +1,14 @@
+FRAMEWORK: >= NET45
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FSharp.Core (4.0.0.1)
+    FSharp.Data (2.3.2)
+    Google.DataTable.Net.Wrapper (3.1.2)
+    MathNet.Numerics (3.16)
+    MathNet.Numerics.FSharp (3.16)
+      FSharp.Core (>= 3.1.2.5)
+      MathNet.Numerics (3.16)
+    Newtonsoft.Json (9.0.1)
+    XPlot.GoogleCharts (1.4.2)
+      Google.DataTable.Net.Wrapper (3.1.2)
+      Newtonsoft.Json (9.0.1)
