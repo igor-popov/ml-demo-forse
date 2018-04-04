@@ -42,12 +42,17 @@ let predict (theta:Vec) (v:Vec) = theta * v;
 type Featurizer = Datapoint -> float list
 
 let featurizerMain (obs:Datapoint) = 
-    let workingday = System.Convert.ToInt32(obs.Workingday);
     [   1.0; 
         float obs.Weekday;
-        float workingday;
+        (if obs.Holiday then 1.0 else 0.0) ;
+        float obs.Weathersit;
         float obs.Atemp;
+        float obs.Atemp * float obs.Atemp;
+        float obs.Windspeed * float obs.Windspeed;
+        float obs.Hum * float obs.Hum;
+        float obs.Hum * float obs.Windspeed;
         float obs.Hum;
+        float (Math.Sqrt (float obs.Temp));
         float obs.Windspeed];
 
 let featurizerOne (obs:Datapoint) = 
@@ -114,27 +119,29 @@ type DataAndPrediction = {
     Prediction: float;
 };
 
-let runForAllFeatures (iterations: int) =
-    let optimal = solve featurizerMain train.Rows 0.1 iterations;
-    let (averageDiff, maxDiff) = validate optimal featurizerMain test.Rows;
-    printfn "Average deviation: %f" averageDiff;
-    printfn "Max deviation: %f" maxDiff;
+type CalculationResult = {theta: Vec; trainCost: float; testCost: float; iterations: int}
 
-    optimal;
+let runForAllFeatures (iterations: int) (f:Featurizer): CalculationResult =
+    let optimal = solve f train.Rows 0.1 iterations;
+    let (averageDiff, maxDiff) = validate optimal f test.Rows;
+    
+    let trainCost = calculateCost optimal f train.Rows;
+    let testCost = calculateCost optimal f test.Rows;
 
+    {theta = optimal; trainCost = trainCost; testCost=testCost; iterations=iterations};
 
-let iterationsCount = 100000;
-let thetaOptimal = runForAllFeatures(iterationsCount);
-
-let trainCost = calculateCost thetaOptimal featurizerMain train.Rows;
-let testCost = calculateCost thetaOptimal featurizerMain test.Rows;
+let iterationsCount = 60000;
+let result = runForAllFeatures iterationsCount featurizerMain;
 
 printfn "Using iterations: %d" iterationsCount;
-printfn "Train cost: %f" trainCost;
-printfn "Test cost: %f" testCost;
+printfn "Train cost: %f" result.trainCost;
+printfn "Test cost: %f" result.testCost;
+printfn "Theta values";
+for v in result.theta do
+    printfn "Theta: %f" v;
 
 let featureIndex = 4;
-let dataAndPrediction = test.Rows |> Seq.map (fun day -> {Features = featurizerMain(day); Data = day; Prediction = (vector(featurizerMain(day)) * thetaOptimal);}) |> Seq.toList;
+let dataAndPrediction = test.Rows |> Seq.map (fun day -> {Features = featurizerMain(day); Data = day; Prediction = (vector(featurizerMain(day)) * result.theta);}) |> Seq.toList;
 let orderedDataAndPrediction = dataAndPrediction |> Seq.sortBy (fun day -> day.Features.Item(featureIndex)) |> Seq.toList;
   
 dataAndPrediction
@@ -148,4 +155,13 @@ Chart.Line [
     ]
 |> Chart.Show;
 
-    
+let solutionsByIteration =  
+    [10..1000]
+    |> Seq.map (fun i -> (runForAllFeatures i featurizerMain))
+    |> Seq.toList
+
+Chart.Line [
+    [ for s in solutionsByIteration -> float s.iterations, s.trainCost ]
+    [ for s in solutionsByIteration -> float s.iterations, s.testCost ]
+    ]
+|> Chart.Show;
