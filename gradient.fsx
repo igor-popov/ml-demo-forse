@@ -14,7 +14,6 @@
 #r "MathNet.Numerics.FSharp.dll"
 
 open System
-open System.IO
 open XPlot.GoogleCharts
 open FSharp.Data
 
@@ -26,18 +25,13 @@ type Datapoint = Dataset.Row
 let train = Dataset.Load("data/train.csv")
 let test = Dataset.Load("data/test.csv")
 
-type Hypothesis = Datapoint -> float
-
-open MathNet
 open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
-open MathNet.Numerics.LinearAlgebra.DenseVector
 open MathNet.Numerics.Random
 
 type Vec = Vector<float>
 type Mat = Matrix<float>
 
-let predict (theta:Vec) (v:Vec) = theta * v;
 
 type Featurizer = Datapoint -> float list
 
@@ -54,12 +48,6 @@ let featurizerMain (obs:Datapoint) =
         float obs.Hum;
         float (Math.Sqrt (float obs.Temp));
         float obs.Windspeed];
-
-let featurizerOne (obs:Datapoint) = 
-    let workingday = System.Convert.ToInt32(obs.Workingday);
-    [   1.0; 
-        float obs.Weekday;
-        ];
 
 let seed (n: int) = 
     let randomValues = Random.doubles n |> Seq.map (fun d -> 100.0 * d) |> Seq.toList;
