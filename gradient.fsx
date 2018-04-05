@@ -35,19 +35,7 @@ type Mat = Matrix<float>
 
 type Featurizer = Datapoint -> float list
 
-let featurizerMain (obs:Datapoint) = 
-    [   1.0; 
-        float obs.Weekday;
-        (if obs.Holiday then 1.0 else 0.0) ;
-        float obs.Weathersit;
-        float obs.Atemp;
-        float obs.Atemp * float obs.Atemp;
-        float obs.Windspeed * float obs.Windspeed;
-        float obs.Hum * float obs.Hum;
-        float obs.Hum * float obs.Windspeed;
-        float obs.Hum;
-        float (Math.Sqrt (float obs.Temp));
-        float obs.Windspeed];
+
 
 let seed (n: int) = 
     let randomValues = Random.doubles n |> Seq.map (fun d -> 100.0 * d) |> Seq.toList;
@@ -118,6 +106,22 @@ let runForAllFeatures (iterations: int) (f:Featurizer): CalculationResult =
 
     {theta = optimal; trainCost = trainCost; testCost=testCost; iterations=iterations};
 
+let featurizerMain (obs:Datapoint) = 
+    [   1.0; 
+        float obs.Weekday;
+        (if obs.Holiday then 1.0 else 0.0) ;
+        float obs.Weathersit;
+        float obs.Atemp;
+        float obs.Atemp * float obs.Atemp;
+        float obs.Windspeed * float obs.Windspeed;
+        float obs.Hum * float obs.Hum;
+        float obs.Hum * float obs.Windspeed;
+        float obs.Hum;
+        float (Math.Sqrt (float obs.Temp));
+        float obs.Windspeed;
+    ];
+
+let featureIndex = 10;
 let iterationsCount = 60000;
 let result = runForAllFeatures iterationsCount featurizerMain;
 
@@ -128,7 +132,7 @@ printfn "Theta values";
 for v in result.theta do
     printfn "Theta: %f" v;
 
-let featureIndex = 4;
+
 let dataAndPrediction = test.Rows |> Seq.map (fun day -> {Features = featurizerMain(day); Data = day; Prediction = (vector(featurizerMain(day)) * result.theta);}) |> Seq.toList;
 let orderedDataAndPrediction = dataAndPrediction |> Seq.sortBy (fun day -> day.Features.Item(featureIndex)) |> Seq.toList;
   
@@ -144,7 +148,7 @@ Chart.Line [
 |> Chart.Show;
 
 let solutionsByIteration =  
-    [10..1000]
+    [10..50]
     |> Seq.map (fun i -> (runForAllFeatures i featurizerMain))
     |> Seq.toList
 
